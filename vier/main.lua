@@ -10,6 +10,9 @@ function love.load()
 
     -- love.graphics.setMode(1024, 768)
 
+    local screenWidth= love.graphics.getWidth();
+    local screenHeight= love.graphics.getHeight();
+
     -- Fat lines.
     love.graphics.setLineWidth(2)
 
@@ -31,7 +34,9 @@ function love.load()
     world = love.physics.newWorld(0, 50)
 
     -- Create ground body.
-    ground = love.physics.newBody(world, 0, 0, "static")
+    local b = love.physics.newBody(world, screenWidth / 2, screenHeight - 5, "static")
+    local s = love.physics.newRectangleShape(0, 0, screenWidth, 10)
+    ground = love.physics.newFixture(b, s)
 
     local s = love.physics.newCircleShape(30)
 
@@ -77,12 +82,14 @@ function love.draw()
     -- Draw all the balls.
     for i,v in ipairs(balls) do
         local b= v.f:getBody()
-        love.graphics.draw(v.i, b:getX(), b:getY(), b:getAngle(), 1, 1)
+        love.graphics.draw(v.i, b:getX(), b:getY(), b:getAngle(), 1, 1, -15, -15)
     end
     -- Draw all the boxes.
     -- for i,v in ipairs(boxes) do
     --     love.graphics.polygon("line", v.s:getPoints())
     -- end
+
+    love.graphics.polygon("line", ground:getShape():getPoints())
 end
 
 -- Adds a static box.
