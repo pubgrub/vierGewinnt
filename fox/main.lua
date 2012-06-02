@@ -18,5 +18,13 @@ function love.load()
    love.graphics.setBackgroundColor( 200,150,100)
    love.graphics.setMode( 600, 400, false, true, 0)
 
-
 end
+
+function love.update( dt)
+   world:update( dt)
+end
+
+function love.draw()
+   love.graphics.setColor( 20, 40, 60)
+   love.graphics.circle( "fill", objects.ball.body:getX(), objects.ball.body:getY(), objects.ball.body.getRadius()
+    
