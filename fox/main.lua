@@ -16,7 +16,7 @@ function love.load()
    objects.ball.fixture:setRestitution( 0.9)
    
    love.graphics.setBackgroundColor( 200,150,100)
-   love.graphics.setMode( 600, 400, false, true, 0)
+   love.graphics.setMode( 600, 600, false, true, 0)
 
 end
 
@@ -25,6 +25,6 @@ function love.update( dt)
 end
 
 function love.draw()
-   love.graphics.setColor( 20, 40, 60)
-   love.graphics.circle( "fill", objects.ball.body:getX(), objects.ball.body:getY(), objects.ball.body.getRadius()
-    
+   love.graphics.setColor( 220, 40, 60)
+   love.graphics.circle( "fill", objects.ball.body:getX(), objects.ball.body:getY(), objects.ball.shape:getRadius() )
+end
