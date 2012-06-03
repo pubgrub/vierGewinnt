@@ -5,6 +5,7 @@ BASE_H = 20
 COL_H = 180
 COL_W = 10
 SLOT_W = 30
+BALL_W = SLOT_W / 2 - 2
 TOWER_W = COL_W * 8 + SLOT_W * 7
 TOWERSPIKE_H = 2
 
@@ -14,7 +15,7 @@ PI4= math.pi / 4
 PI8= math.pi / 8
 PI16= math.pi / 16
 
-PLAYER_RADIUS= 40
+PLAYER_RADIUS= BALL_W
 
 ball= {}
 tower= {}
@@ -25,21 +26,21 @@ screenWidth= 0
 screenHeight= 0
 
 function fixWorldXY( f)
-    b = f:getBody()
+    body = f:getBody()
     local x1, y1, x2, y2 = f:getBoundingBox()
     local w = x2 - x1
     local h = y2 - y1
-    local bX, bY = b:getPosition()
+    local bX, bY = body:getPosition()
     print( f)
-    print( "Body getY: ", b:getY())
-    print( "Body getPosition: ", b:getPosition())
-    b:setPosition( bX + w / 2, bY + h / 2)
-    print( "Body getY: ", b:getY())
-    print( "Body getPosition: ", b:getPosition())
+    print( "Body getY: ", body:getY())
+    print( "Body getPosition: ", body:getPosition())
+    body:setPosition( bX + w / 2, bY + h / 2)
+    print( "Body getY: ", body:getY())
+    print( "Body getPosition: ", body:getPosition())
 end
 
-function newFixture( b, s)
-    local f = love.physics.newFixture( b, s)
+function newFixture( body, shape)
+    local f = love.physics.newFixture( body, shape)
     fixWorldXY( f)
     return f
 end
@@ -47,7 +48,7 @@ end
 function initBall()
     ball.body = love.physics.newBody( world, 505, 100, "dynamic")
     ball.body:setMass( 50)
-    ball.shape = love.physics.newCircleShape( 14)
+    ball.shape = love.physics.newCircleShape( BALL_W)
     ball.fixture = love.physics.newFixture(ball.body, ball.shape)
     ball.fixture:setRestitution( 0.4)
 end
@@ -72,10 +73,9 @@ function initTower()
 end
 
 function initGround()
-    -- Create ground body.
-    local b = love.physics.newBody(world, screenWidth / 2, screenHeight - 5, "static")
-    local s = love.physics.newRectangleShape(0, 0, screenWidth, 10)
-    ground = love.physics.newFixture(b, s)
+    local body = love.physics.newBody(world, screenWidth / 2, screenHeight - 5, "static")
+    local shape = love.physics.newRectangleShape(0, 0, screenWidth, 10)
+    ground = love.physics.newFixture(body, shape)
 end
 
 function initPlayers()
@@ -84,27 +84,31 @@ function initPlayers()
     -- FIXME: Nur green wird benutzt
     local images = {
         green = love.graphics.newImage("green_ball.png"),
-        big_love = love.graphics.newImage("big_love_ball.png"),
-        love = love.graphics.newImage("love_ball.png"),
+    --     big_love = love.graphics.newImage("big_love_ball.png"),
+    --     love = love.graphics.newImage("love_ball.png"),
     }
 
     -- Image / radius pairs.
     -- FIXME: UNUSED
-    local balldefs = {
-        { i = images.green,     r = 32 , ox = 36, oy = 36},
-        { i = images.big_love,  r = 46 , ox = 48, oy = 48},
-        { i = images.love,      r = 28 , ox = 32, oy = 32},
-    }
+    -- local balldefs = {
+    --     { i = images.green,     r = 32 , ox = 36, oy = 36},
+    --     { i = images.big_love,  r = 46 , ox = 48, oy = 48},
+    --     { i = images.love,      r = 28 , ox = 32, oy = 32},
+    -- }
 
-    local s = love.physics.newCircleShape(32)
-    local x = 100
-    local y = 300
-    local b = love.physics.newBody(world, x, y, "dynamic")
-    local t = {}
-    t.i = images.green
-    t.f = love.physics.newFixture(b, s)
-    t.f:setRestitution(0.4);
-    table.insert(players, t)
+    local addPlayer= function(x)
+        local shape = love.physics.newCircleShape(BALL_W)
+        local y = 300
+        local body = love.physics.newBody(world, x, y, "dynamic")
+        local t = {}
+        t.image = images.green
+        t.fixture = love.physics.newFixture(body, shape)
+        t.fixture:setRestitution(0.4);
+        table.insert(players, t)
+    end
+
+    addPlayer(100)
+    addPlayer(screenWidth - 100)
 end
 
 function love.load()
@@ -124,10 +128,10 @@ end
 
 function updatePlayer(dt)
     local x, y = love.mouse.getPosition()
-    local b= players[player].f:getBody()
-    -- print(x, y, b:getX(), b:getY())
-    local bx= b:getX()
-    local by= b:getY()
+    local body= players[player].fixture:getBody()
+    -- print(x, y, body:getX(), body:getY())
+    local bx= body:getX()
+    local by= body:getY()
 
     local dist = (math.sqrt((x - bx) * (x - bx) + (y - by) * (y - by)) - PLAYER_RADIUS) / 2
     if dist < 0 then dist= 0 end
@@ -146,24 +150,24 @@ function love.update( dt)
 end
 
 function drawPolygon( mode, fixture)
-    local s = fixture:getShape()
-    local b = fixture:getBody()
+    local shape = fixture:getShape()
+    local body = fixture:getBody()
     print( "drawPolygon start")
-    print( "s:getPoints: ", s:getPoints())
-    print( "b:getPositions: ", b:getPosition())
-    print( "b:getWorldPoints(s:getPoints() ): ", b:getWorldPoints(s:getPoints() ))
+    print( "shape:getPoints: ", shape:getPoints())
+    print( "body:getPositions: ", body:getPosition())
+    print( "body:getWorldPoints(shape:getPoints() ): ", body:getWorldPoints(shape:getPoints() ))
     print( "drawPolygon stop")
 
-    love.graphics.polygon( mode, b:getWorldPoints(s:getPoints() ) )
-    for i = 1, 0 do end
+    love.graphics.polygon( mode, body:getWorldPoints(shape:getPoints() ) )
+    -- for i = 1, 0 do end
 end
 
 function drawRectangle(mode, fixture)
     local x1, y1, x2, y2 = fixture:getBoundingBox()
     local w = x2 - x1
     local h = y2 - y1
-    local b = fixture:getBody()
-    love.graphics.rectangle(mode, b:getX() - w / 2, b:getY() - h / 2, w, h)
+    local body = fixture:getBody()
+    love.graphics.rectangle(mode, body:getX() - w / 2, body:getY() - h / 2, w, h)
 end
 
 function drawBall()
@@ -179,16 +183,21 @@ function drawTower()
     end
 end
 
+function drawGround()
+    love.graphics.setColor( 220, 40, 60)
+    drawRectangle("fill", ground);
+end
+
 function drawPlayer()
     for i,v in ipairs(players) do
-        local b = v.f:getBody()
-        local x, y = b:getPosition()
+        local body = v.fixture:getBody()
+        local x, y = body:getPosition()
         local angle = x * 2 / PLAYER_RADIUS
         local dist= v.dist
-        local vx, vy = b:getLinearVelocity()
+        local vx, vy = body:getLinearVelocity()
         local vv = vx * vx + vy * vy
 
-        if vv < 20 and dist > 0 then
+        if vv < 20 and dist ~= nil and dist > 0 then
             local sin= math.sin(v.angle + PI2)
             local cos= math.cos(v.angle + PI2)
             local x1, y1= x + sin * PLAYER_RADIUS, y - cos * PLAYER_RADIUS
@@ -199,21 +208,16 @@ function drawPlayer()
 
             if love.mouse.isDown("l") then
                 print("click", x2 - x1, y2 - y1)
-                -- v.f:setRestitution(0.1)
-                b:setLinearDamping(0.5)
+                -- v.fixture:setRestitution(0.1)
+                body:setLinearDamping(0.5)
                 local fact= 10
-                b:setLinearVelocity((x2 - x1) * fact, (y2 - y1) * fact)
+                body:setLinearVelocity((x2 - x1) * fact, (y2 - y1) * fact)
             end
         end
 
-        b:setAngle(angle)
-        love.graphics.draw(v.i, x, y, angle, 1, 1, 36, 36)
+        body:setAngle(angle)
+        love.graphics.draw(v.image, x, y, angle, BALL_W / 36, BALL_W / 36) -- , BALL_W, BALL_W)
     end
-end
-
-function drawGround()
-    love.graphics.setColor( 220, 40, 60)
-    drawRectangle("fill", ground);
 end
 
 function love.draw()
