@@ -28,6 +28,8 @@ waitForMouseUp = true
 screenWidth= 0
 screenHeight= 0
 
+towerX= 0
+
 function player()
     return (turn % 2) + 1
 end
@@ -42,24 +44,17 @@ end
 
 function initTower()
     tower.base = {}
-    TOWER_X = ( screenWidth - TOWER_W) / 2
-    local body = love.physics.newBody( world, TOWER_X, screenHeight - GROUND_Y - BASE_H)
-    local shape = love.physics.newPolygonShape(  0,       0,
-                                                 TOWER_W, 0,
-                                                 TOWER_W, BASE_H,
-                                                 0,       BASE_H)
+    towerX = ( screenWidth - TOWER_W) / 2
+    local body = love.physics.newBody( world, towerX, screenHeight - GROUND_Y - BASE_H)
+    local shape = love.physics.newPolygonShape(  0, 0,  TOWER_W, 0,  TOWER_W, BASE_H,  0, BASE_H)
     tower.base.fixture = love.physics.newFixture( body, shape)
     tower.cols = {}
     for i = 0,7 do
-      col = {}
-      local body = love.physics.newBody( world, ( screenWidth - TOWER_W) / 2 +i * ( COL_W + SLOT_W), screenHeight - GROUND_Y - BASE_H - COL_H)
-      local shape = love.physics.newPolygonShape( 0, TOWERSPIKE_H,
-                                                  0, COL_H,
-                                                  COL_W, COL_H,
-                                                  COL_W, TOWERSPIKE_H,
-                                                  COL_W / 2, 0)
-      col.fixture = love.physics.newFixture( body, shape)
-      table.insert( tower.cols, col)
+        local col = {}
+        local body = love.physics.newBody( world, ( screenWidth - TOWER_W) / 2 +i * ( COL_W + SLOT_W), screenHeight - GROUND_Y - BASE_H - COL_H)
+        local shape = love.physics.newPolygonShape( 0, TOWERSPIKE_H,  0, COL_H,  COL_W, COL_H,  COL_W, TOWERSPIKE_H,  COL_W / 2, 0)
+        col.fixture = love.physics.newFixture( body, shape)
+        table.insert( tower.cols, col)
     end
 end
 
@@ -113,7 +108,7 @@ end
 function initBalls()
     local shape = love.physics.newCircleShape(BALL_R)
     local i
-    for i=1,42 do
+    for i = 1, 42 do
         local x = (screenWidth - TOWER_W) / 2 + (SLOT_W + COL_W) / 2 + ((i - 1) % 7) * (COL_W + SLOT_W)
         local y = math.floor((i - 1) / 7) * COL_W
         local body = love.physics.newBody(world, x, y, "dynamic")
@@ -135,7 +130,7 @@ function initBoard()
         for x = 0,6 do
             local p = {}
             p.y = boardBase - BALL_R * 2 * ( y + 0.5)
-            p.x = TOWER_X + COL_W + (COL_W + SLOT_W) * x + SLOT_W * 0.5
+            p.x = towerX + COL_W + (COL_W + SLOT_W) * x + SLOT_W * 0.5
             table.insert( board.positions, p)
 --            print( p.x, p.y)
 --            b = {}
@@ -164,6 +159,19 @@ function love.load()
     initPlayers()
     initBalls()
     initBoard()
+end
+
+function updateBalls(dt)
+    for i, ball in ipairs(balls) do
+        local body= ball:getBody()
+        local vx, vy = body:getLinearVelocity()
+        local vv = vx * vx + vy * vy
+        local x= body:getX()
+        local y= body:getY()
+        if vv < 20 and (x < towerX or x > towerX + TOWER_W) then
+            body:setActive(false)
+        end
+    end
 end
 
 aimLine= nil
@@ -237,7 +245,7 @@ function updateBoard(dt)
             local velX, velY = b.body:getLinearVelocity()
             if( velX == 0 and velY == 0) then
                 local x,y = b.body:getPosition()
-                if( x > TOWER_X and x < TOWER_X + TOWER_W and y > TOWER_Y and y < TOWER_Y + COH_H) then
+                if( x > towerX and x < towerX + TOWER_W and y > TOWER_Y and y < TOWER_Y + COH_H) then
 
                 end
             end
@@ -250,6 +258,7 @@ end
 
 function love.update( dt)
     world:update( dt)
+    updateBalls(dt)
     updatePlayer(dt)
     updateBoard(dt)
 end
@@ -284,12 +293,14 @@ end
 function drawBalls()
     for i=1,turn do
         local ball= balls[i]
-        if i % 2 == 0 then
-            love.graphics.setColor(200, 0, 0)
-        else
-            love.graphics.setColor(0, 0, 200)
+        if ball:getBody():isActive() then
+            if i % 2 == 0 then
+                love.graphics.setColor(200, 0, 0)
+            else
+                love.graphics.setColor(0, 0, 200)
+            end
+            love.graphics.circle( "fill", ball:getBody():getX(), ball:getBody():getY(), ball:getShape():getRadius() )
         end
-        love.graphics.circle( "fill", ball:getBody():getX(), ball:getBody():getY(), ball:getShape():getRadius() )
     end
 end
 
