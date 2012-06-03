@@ -1,6 +1,6 @@
 function love.conf(t)
-    t.title = "Vier"
+    t.title = "fox"
     t.console = true
-    t.width = 1024
-    t.height = 768
+    t.width = 800
+    t.height = 600
 end
