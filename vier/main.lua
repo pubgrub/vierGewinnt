@@ -296,8 +296,11 @@ function updateBoard(dt)
             end
         end
     end
+
     if changed then
         str = ""
+
+-- this loop only displays grid on console for debugging
         for j,p in ipairs( board.positions) do
             if( p.player ~= 0) then
                 str = str .. tostring( p.player) .. " "
