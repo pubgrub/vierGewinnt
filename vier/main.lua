@@ -20,7 +20,7 @@ players = {}
 balls= {}
 board = {}
 border = {}
-winner= 0
+winner = 0
 
 waitForMouseUp = true
 
@@ -50,7 +50,7 @@ function addNewBall(x, y, vx, vy)
     local fact= 10
     body:setLinearVelocity(vx * fact, vy * fact)
     local fixture = love.physics.newFixture(body, ballShape)
-    fixture:setRestitution(0.4)
+    fixture:setRestitution(0.05)
     table.insert(balls, fixture)
 end
 
@@ -62,13 +62,6 @@ end
 --  Init
 ---------------------------------------------------------------------------------------------------
 
-function initBall()
-    ball.body = love.physics.newBody( world, 490, 100, "dynamic")
-    ball.body:setMass( 50)
-    ball.shape = love.physics.newCircleShape( BALL_R)
-    ball.fixture = love.physics.newFixture(ball.body, ball.shape)
-    ball.fixture:setRestitution( 0.05)
-end
 
 function initTower()
     tower.base = {}
@@ -169,7 +162,6 @@ function love.load()
     love.physics.setMeter(64)
     world = love.physics.newWorld(0, 9.81 * love.physics.getMeter(), true)
 
-    initBall()
     initTower()
     initBorders()
     initPlayers()
@@ -273,16 +265,16 @@ end
 
 function updateBoard(dt)
     local changed = false
+    local winner = 0
     
     function checkRow( p, offset)
         print( "checkRow, p, offset: ", p, offset)
-        local playerSum = 0
         local player = board.positions[ p].player
-        for i = offset,offset*4,offset do
-            local playerSum = playerSum + board.positions[p + offset].player
-            if( playerSum == player * 4) then return player end
+        for i = offset,offset*3,offset do
+            if( player ~= board.positions[p + i].player) then return 0 end
         end
-        return 0
+        print( "gewonnen! Spieler: ", player, "p: ", p, "offset: ", offset)
+        return player
     end
 
     for j,p in ipairs( board.positions) do
@@ -325,14 +317,17 @@ function updateBoard(dt)
                 if( matrix > 7) then
                     matrix = matrix - 8
                     winner = checkRow( j, 6)
+                    if( winner > 0) then break end
                 end                
                 if( matrix > 3) then
                     matrix = matrix - 4
                     winner = checkRow( j, 8)
+                    if( winner > 0) then break end
                 end                
                 if( matrix > 1) then
                     matrix = matrix - 2
                     winner = checkRow( j, 7)
+                    if( winner > 0) then break end
                 end                
                 if( matrix > 0) then
                     winner = checkRow( j, 1)
@@ -366,11 +361,6 @@ function drawRectangle(mode, fixture)
     local h = y2 - y1
     local body = fixture:getBody()
     love.graphics.rectangle(mode, body:getX() - w / 2, body:getY() - h / 2, w, h)
-end
-
-function drawBall()
-    love.graphics.setColor( 220, 40, 60)
-    love.graphics.circle( "fill", ball.body:getX(), ball.body:getY(), ball.shape:getRadius() )
 end
 
 function drawTower()
@@ -436,7 +426,6 @@ function drawMessage()
 end
 
 function love.draw()
-    drawBall()
     drawBalls()
     drawTower()
     drawBorder()
