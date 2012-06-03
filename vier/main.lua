@@ -18,12 +18,18 @@ PI16= math.pi / 16
 ball= {}
 tower= {}
 players = {}
-player= 1
+-- player= 1
+balls= {}
+turn= 10
 
 waitForMouseUp = true
 
 screenWidth= 0
 screenHeight= 0
+
+function player()
+    return (turn % 2) + 1
+end
 
 function initBall()
     ball.body = love.physics.newBody( world, 505, 100, "dynamic")
@@ -86,7 +92,7 @@ function initPlayers()
         local t = {}
         t.image = images.green
         t.fixture = love.physics.newFixture(body, shape)
-        t.fixture:setRestitution(0.4);
+        t.fixture:setRestitution(0.4)
         table.insert(players, t)
     end
 
@@ -94,11 +100,26 @@ function initPlayers()
     addPlayer(screenWidth - 100)
 end
 
+function initBalls()
+    local shape = love.physics.newCircleShape(BALL_W)
+    local i
+    for i=1,42 do
+        local x = (screenWidth - TOWER_W) / 2 + (SLOT_W + COL_W) / 2 + ((i - 1) % 7) * (COL_W + SLOT_W)
+        local y = math.floor((i - 1) / 7) * COL_W
+        local body = love.physics.newBody(world, x, y, "dynamic")
+        body:setActive(i <= turn) -- fuers testen, normalerweise ist turn hier 0
+        body:setLinearDamping(0.5)
+        local fixture = love.physics.newFixture(body, shape)
+        fixture:setRestitution(0.4)
+        table.insert(balls, fixture)
+    end
+end
+
 function love.load()
     love.graphics.setBackgroundColor( 200, 150, 100)
 
-    screenWidth= love.graphics.getWidth();
-    screenHeight= love.graphics.getHeight();
+    screenWidth= love.graphics.getWidth()
+    screenHeight= love.graphics.getHeight()
 
     love.physics.setMeter(64)
     world = love.physics.newWorld(0, 9.81 * love.physics.getMeter(), true)
@@ -107,11 +128,14 @@ function love.load()
     initTower()
     initGround()
     initPlayers()
+    initBalls()
 end
+
+aimLine= nil
 
 function updatePlayer(dt)
     local x, y = love.mouse.getPosition()
-    local body= players[player].fixture:getBody()
+    local body= players[player()].fixture:getBody()
     -- print(x, y, body:getX(), body:getY())
     local bx= body:getX()
     local by= body:getY()
@@ -121,7 +145,7 @@ function updatePlayer(dt)
     if dist > 100 then dist= 100 end
 
     local angle = math.atan2(y - by, x - bx)
-    if player == 1 then
+    if player() == 1 then
         if angle > -PI16 then angle= -PI16 end
         if angle < -PI2 + PI16 then angle= -PI2 + PI16 end
 
@@ -131,8 +155,41 @@ function updatePlayer(dt)
         if angle < -PI + PI16 then angle= -PI + PI16 end
     end
 
-    players[player].dist= dist
-    players[player].angle= angle
+    local pl= players[player()]
+
+    pl.dist= dist
+    pl.angle= angle
+
+    aimLine= nil
+
+    if dist > 0 then
+        local sin= math.sin(angle + PI2)
+        local cos= math.cos(angle + PI2)
+        local x1, y1= bx + sin * BALL_W, by - cos * BALL_W
+        local x2, y2= bx + sin * (BALL_W + dist), by - cos * (BALL_W + dist)
+
+        aimLine= { x1= x1, y1= y1, x2= x2, y2= y2 }
+
+        if love.mouse.isDown("l") then
+            if not waitForMouseUp then
+
+                local ball= balls[turn]
+                ball:getBody():setActive(true)
+                ball:getBody():setX(x1)
+                ball:getBody():setY(y1)
+                local fact= 10
+                ball:getBody():setLinearVelocity((x2 - x1) * fact, (y2 - y1) * fact)
+                turn = turn + 1
+
+                print("click", x2 - x1, y2 - y1)
+
+                waitForMouseUp = true
+            end
+        else
+            waitForMouseUp = false
+        end
+    end
+
 end
 
 function love.update( dt)
@@ -174,21 +231,53 @@ function drawTower()
     end
 end
 
+function drawBalls()
+    for i=1,turn do
+        local ball= balls[i]
+        if i % 2 == 0 then
+            love.graphics.setColor(200, 0, 0)
+        else
+            love.graphics.setColor(0, 0, 200)
+        end
+        love.graphics.circle( "fill", ball:getBody():getX(), ball:getBody():getY(), ball:getShape():getRadius() )
+    end
+end
+
 function drawGround()
     love.graphics.setColor( 220, 40, 60)
     drawRectangle("fill", ground);
 end
 
-function drawPlayer()
+function drawPlayers()
     for i,v in ipairs(players) do
         local body = v.fixture:getBody()
         local x, y = body:getPosition()
         local angle = x * 2 / BALL_W
         local dist= v.dist
+
+        body:setAngle(angle)
+        local o= 36 -- Warum 36??
+        love.graphics.draw(v.image, x, y, angle, BALL_W / 36, BALL_W / 36, o, o)
+    end
+
+    if aimLine ~= nil then
+        love.graphics.line(aimLine.x1, aimLine.y1, aimLine.x2, aimLine.y2)
+    end
+end
+
+function drawPlayer_OLD()
+    for i,v in ipairs(players) do
+        local body = v.fixture:getBody()
+        local x, y = body:getPosition()
+        local angle = x * 2 / BALL_W
+        local dist= v.dist
+
+
+
         local vx, vy = body:getLinearVelocity()
         local vv = vx * vx + vy * vy
 
-        if vv < 20 and dist ~= nil and dist > 0 and i == player then
+        if vv < 20 and dist ~= nil and dist > 0 and i == player() then
             local sin= math.sin(v.angle + PI2)
             local cos= math.cos(v.angle + PI2)
             local x1, y1= x + sin * BALL_W, y - cos * BALL_W
@@ -204,8 +293,6 @@ function drawPlayer()
                     body:setLinearDamping(0.5)
                     local fact= 10
                     body:setLinearVelocity((x2 - x1) * fact, (y2 - y1) * fact)
-
-                    player = 3 - player
                     waitForMouseUp = true
                 end
             else
@@ -221,7 +308,8 @@ end
 
 function love.draw()
     drawBall()
+    drawBalls()
     drawTower()
     drawGround()
-    drawPlayer()
+    drawPlayers()
 end
