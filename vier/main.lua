@@ -100,39 +100,30 @@ function initBorders()
     border.right  = love.physics.newFixture(body, shapeV)
 end
 
+shadowImage= nil
+
 function initPlayers()
 
-    -- Load images.
-    -- FIXME: Nur green wird benutzt
-    local images = {
-        green = love.graphics.newImage("green_ball.png"),
-    --     big_love = love.graphics.newImage("big_love_ball.png"),
-    --     love = love.graphics.newImage("love_ball.png"),
-    }
-
-    -- Image / radius pairs.
-    -- FIXME: UNUSED
-    -- local balldefs = {
-    --     { i = images.green,     r = 32 , ox = 36, oy = 36},
-    --     { i = images.big_love,  r = 46 , ox = 48, oy = 48},
-    --     { i = images.love,      r = 28 , ox = 32, oy = 32},
-    -- }
-
-    local addPlayer= function(x)
+    local addPlayer= function(x, title, image, imageX, imageY)
         local shape = love.physics.newCircleShape(BALL_R)
         local y = 300
         local body = love.physics.newBody(world, x, y, "dynamic")
         body:setLinearDamping(0.5)
         local t = {}
-        t.image = images.green
+        t.title = title
+        t.image = image
+        t.imageX = imageX
+        t.imageY = imageY
         t.fixture = love.physics.newFixture(body, shape)
         t.fixture:setRestitution(0.4)
         t.initX= x
         table.insert(players, t)
     end
 
-    addPlayer(100)
-    addPlayer(screenWidth - 100)
+    addPlayer(100, "Blau", love.graphics.newImage("ball-blue.png"), 16, 16)
+    addPlayer(screenWidth - 100, "Rot", love.graphics.newImage("ball-red.png"), 16, 16)
+
+    shadowImage= { image = love.graphics.newImage("ball-shadow.png"), imageX = 16, imageY = 16 }
 end
 
 function initBoard()
@@ -162,7 +153,7 @@ end
 
 function love.load()
     love.graphics.setBackgroundColor( 200, 150, 100)
-
+    love.graphics.setColorMode("replace")
     screenWidth= love.graphics.getWidth()
     screenHeight= love.graphics.getHeight()
 
@@ -273,7 +264,7 @@ end
 
 function updateBoard(dt)
     local changed = false
-    
+
     function checkRow( p, offset)
         print( "checkRow, p, offset: ", p, offset)
         local playerSum = 0
@@ -325,19 +316,19 @@ function updateBoard(dt)
                 if( matrix > 7) then
                     matrix = matrix - 8
                     winner = checkRow( j, 6)
-                end                
+                end
                 if( matrix > 3) then
                     matrix = matrix - 4
                     winner = checkRow( j, 8)
-                end                
+                end
                 if( matrix > 1) then
                     matrix = matrix - 2
                     winner = checkRow( j, 7)
-                end                
+                end
                 if( matrix > 0) then
                     winner = checkRow( j, 1)
-                end                
-            end             
+                end
+            end
         end
         if( winner > 0) then gameWon( winner) end
     end
@@ -381,16 +372,19 @@ function drawTower()
     end
 end
 
+function drawBall2(ball, pl)
+    local x, y = ball:getBody():getPosition()
+    local angle = (x + y / 10) * 2 / BALL_R
+    ball:getBody():setAngle(angle)
+    love.graphics.draw(shadowImage.image, x, y, 0, 1, 1, shadowImage.imageX, shadowImage.imageY)
+    love.graphics.draw(pl.image, x, y, angle, 1, 1, pl.imageX, pl.imageY)
+end
+
 function drawBalls()
     for i=1,#balls do
         local ball= balls[i]
         if ball:getBody():isActive() then
-            if i % 2 == 0 then
-                love.graphics.setColor(200, 0, 0)
-            else
-                love.graphics.setColor(0, 0, 200)
-            end
-            love.graphics.circle( "fill", ball:getBody():getX(), ball:getBody():getY(), ball:getShape():getRadius() )
+            drawBall2(ball, players[2 - i % 2])
         end
     end
 end
@@ -401,15 +395,8 @@ function drawBorder()
 end
 
 function drawPlayers()
-    for i,v in ipairs(players) do
-        local body = v.fixture:getBody()
-        local x, y = body:getPosition()
-        local angle = x * 2 / BALL_R
-        local dist= v.dist
-
-        body:setAngle(angle)
-        local o= 36 -- Warum 36??
-        love.graphics.draw(v.image, x, y, angle, BALL_R / 36, BALL_R / 36, o, o)
+    for i,pl in ipairs(players) do
+        drawBall2(pl.fixture, pl)
     end
 
     if aimLine ~= nil then
