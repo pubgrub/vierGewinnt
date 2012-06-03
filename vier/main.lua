@@ -1,11 +1,10 @@
 
-TOWER_X = 400
 GROUND_Y = 15
 BASE_H = 20
 COL_H = 180
 COL_W = 10
 SLOT_W = 30
-BALL_W = SLOT_W / 2 - 2
+BALL_R = SLOT_W / 2 - 2
 TOWER_W = COL_W * 8 + SLOT_W * 7
 TOWERSPIKE_H = 2
 
@@ -29,14 +28,15 @@ screenHeight= 0
 function initBall()
     ball.body = love.physics.newBody( world, 490, 100, "dynamic")
     ball.body:setMass( 50)
-    ball.shape = love.physics.newCircleShape( BALL_W)
+    ball.shape = love.physics.newCircleShape( BALL_R)
     ball.fixture = love.physics.newFixture(ball.body, ball.shape)
     ball.fixture:setRestitution( 0.05)
 end
 
 function initTower()
     tower.base = {}
-    local body = love.physics.newBody( world, ( screenWidth - TOWER_W) / 2, screenHeight - GROUND_Y - BASE_H)
+    TOWER_X = ( screenWidth - TOWER_W) / 2
+    local body = love.physics.newBody( world, TOWER_X, screenHeight - GROUND_Y - BASE_H)
     local shape = love.physics.newPolygonShape(  0,       0,
                                                  TOWER_W, 0,
                                                  TOWER_W, BASE_H,
@@ -81,7 +81,7 @@ function initPlayers()
     -- }
 
     local addPlayer= function(x)
-        local shape = love.physics.newCircleShape(BALL_W)
+        local shape = love.physics.newCircleShape(BALL_R)
         local y = 300
         local body = love.physics.newBody(world, x, y, "dynamic")
         local t = {}
@@ -94,6 +94,32 @@ function initPlayers()
 
     addPlayer(100)
     addPlayer(screenWidth - 100)
+end
+
+function initBoard()
+    board = {}
+    board.positions = {}
+    local boardBase = tower.base.fixture:getBody():getY()
+    local x,y
+    boardBalls = {}
+    for y = 0, 5 do
+        for x = 0,6 do
+            local p = {}
+            p.y = boardBase - BALL_R * 2 * ( y + 0.5)
+            p.x = TOWER_X + COL_W + (COL_W + SLOT_W) * x + SLOT_W * 0.5 
+            table.insert( board.positions, p)
+--            print( p.x, p.y)
+--            b = {}
+--            b.body = love.physics.newBody( world, p.x, p.y, "dynamic")
+--            b.body:setMass( 50)
+--            b.shape = love.physics.newCircleShape( BALL_R)
+--            b.fixture = love.physics.newFixture(b.body, b.shape)
+--            b.fixture:setRestitution( 0.05)
+--            table.insert( boardBalls, b)
+            
+            
+        end
+    end
 end
 
 function love.load()
@@ -109,6 +135,7 @@ function love.load()
     initTower()
     initGround()
     initPlayers()
+    initBoard()
 end
 
 function updatePlayer(dt)
@@ -118,7 +145,7 @@ function updatePlayer(dt)
     local bx= body:getX()
     local by= body:getY()
 
-    local dist = (math.sqrt((x - bx) * (x - bx) + (y - by) * (y - by)) - BALL_W) / 2
+    local dist = (math.sqrt((x - bx) * (x - bx) + (y - by) * (y - by)) - BALL_R) / 2
     if dist < 0 then dist= 0 end
     if dist > 100 then dist= 100 end
 
@@ -138,7 +165,8 @@ function updatePlayer(dt)
 end
 
 function updateBoard(dt)
-    board = {}
+    
+    
     for i,p in ipairs(players) do
         for j,b in ipairs( p.balls) do
             local velX, velY = b.body:getLinearVelocity()
@@ -194,7 +222,7 @@ function drawPlayer()
     for i,v in ipairs(players) do
         local body = v.fixture:getBody()
         local x, y = body:getPosition()
-        local angle = x * 2 / BALL_W
+        local angle = x * 2 / BALL_R
         local dist= v.dist
         local vx, vy = body:getLinearVelocity()
         local vv = vx * vx + vy * vy
@@ -202,8 +230,8 @@ function drawPlayer()
         if vv < 20 and dist ~= nil and dist > 0 and i == player then
             local sin= math.sin(v.angle + PI2)
             local cos= math.cos(v.angle + PI2)
-            local x1, y1= x + sin * BALL_W, y - cos * BALL_W
-            local x2, y2= x + sin * (BALL_W + dist), y - cos * (BALL_W + dist)
+            local x1, y1= x + sin * BALL_R, y - cos * BALL_R
+            local x2, y2= x + sin * (BALL_R + dist), y - cos * (BALL_R + dist)
             love.graphics.line(x1, y1, x2, y2)
 
             angle= angle + v.angle + PI2 - PI16
@@ -226,8 +254,15 @@ function drawPlayer()
 
         body:setAngle(angle)
         local o= 36 -- Warum 36??
-        love.graphics.draw(v.image, x, y, angle, BALL_W / 36, BALL_W / 36, o, o)
+        love.graphics.draw(v.image, x, y, angle, BALL_R / 36, BALL_R / 36, o, o)
     end
+end
+
+function drawDebug()
+--    love.graphics.setColor( 220, 200, 60)
+--    for i,v in ipairs( boardBalls) do
+--        love.graphics.circle( "fill", v.body:getX(), v.body:getY(), v.shape:getRadius() )
+--    end
 end
 
 function love.draw()
@@ -235,4 +270,5 @@ function love.draw()
     drawTower()
     drawGround()
     drawPlayer()
+    drawDebug()
 end
