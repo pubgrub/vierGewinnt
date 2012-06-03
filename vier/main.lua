@@ -15,12 +15,12 @@ PI4= math.pi / 4
 PI8= math.pi / 8
 PI16= math.pi / 16
 
-PLAYER_RADIUS= BALL_W
-
 ball= {}
 tower= {}
 players = {}
 player= 1
+
+waitForMouseUp = true
 
 screenWidth= 0
 screenHeight= 0
@@ -95,7 +95,7 @@ function initPlayers()
 end
 
 function love.load()
-    love.graphics.setBackgroundColor( 200,150,100)
+    love.graphics.setBackgroundColor( 200, 150, 100)
 
     screenWidth= love.graphics.getWidth();
     screenHeight= love.graphics.getHeight();
@@ -116,14 +116,22 @@ function updatePlayer(dt)
     local bx= body:getX()
     local by= body:getY()
 
-    local dist = (math.sqrt((x - bx) * (x - bx) + (y - by) * (y - by)) - PLAYER_RADIUS) / 2
+    local dist = (math.sqrt((x - bx) * (x - bx) + (y - by) * (y - by)) - BALL_W) / 2
     if dist < 0 then dist= 0 end
     if dist > 100 then dist= 100 end
-    players[player].dist= dist
 
     local angle = math.atan2(y - by, x - bx)
-    if angle > -PI16 then angle= -PI16 end
-    if angle < -PI2 + PI16 then angle= -PI2 + PI16 end
+    if player == 1 then
+        if angle > -PI16 then angle= -PI16 end
+        if angle < -PI2 + PI16 then angle= -PI2 + PI16 end
+
+        -- TODO: dist auf 0 wenn angle total falsch
+    else
+        if angle > -PI2 - PI16 then angle= -PI2 - PI16 end
+        if angle < -PI + PI16 then angle= -PI + PI16 end
+    end
+
+    players[player].dist= dist
     players[player].angle= angle
 end
 
@@ -175,31 +183,39 @@ function drawPlayer()
     for i,v in ipairs(players) do
         local body = v.fixture:getBody()
         local x, y = body:getPosition()
-        local angle = x * 2 / PLAYER_RADIUS
+        local angle = x * 2 / BALL_W
         local dist= v.dist
         local vx, vy = body:getLinearVelocity()
         local vv = vx * vx + vy * vy
 
-        if vv < 20 and dist ~= nil and dist > 0 then
+        if vv < 20 and dist ~= nil and dist > 0 and i == player then
             local sin= math.sin(v.angle + PI2)
             local cos= math.cos(v.angle + PI2)
-            local x1, y1= x + sin * PLAYER_RADIUS, y - cos * PLAYER_RADIUS
-            local x2, y2= x + sin * (PLAYER_RADIUS + dist), y - cos * (PLAYER_RADIUS + dist)
+            local x1, y1= x + sin * BALL_W, y - cos * BALL_W
+            local x2, y2= x + sin * (BALL_W + dist), y - cos * (BALL_W + dist)
             love.graphics.line(x1, y1, x2, y2)
 
             angle= angle + v.angle + PI2 - PI16
 
             if love.mouse.isDown("l") then
-                print("click", x2 - x1, y2 - y1)
-                -- v.fixture:setRestitution(0.1)
-                body:setLinearDamping(0.5)
-                local fact= 10
-                body:setLinearVelocity((x2 - x1) * fact, (y2 - y1) * fact)
+                if not waitForMouseUp then
+                    print("click", x2 - x1, y2 - y1)
+                    -- v.fixture:setRestitution(0.1)
+                    body:setLinearDamping(0.5)
+                    local fact= 10
+                    body:setLinearVelocity((x2 - x1) * fact, (y2 - y1) * fact)
+
+                    player = 3 - player
+                    waitForMouseUp = true
+                end
+            else
+                waitForMouseUp = false
             end
         end
 
         body:setAngle(angle)
-        love.graphics.draw(v.image, x, y, angle, BALL_W / 36, BALL_W / 36) -- , BALL_W, BALL_W)
+        local o= 36 -- Warum 36??
+        love.graphics.draw(v.image, x, y, angle, BALL_W / 36, BALL_W / 36, o, o)
     end
 end
 
