@@ -19,7 +19,7 @@ tower= {}
 players = {}
 -- player= 1
 balls= {}
-turn= 10
+turn= 0
 board = {}
 
 waitForMouseUp = true
@@ -199,13 +199,14 @@ function updatePlayer(dt)
         if love.mouse.isDown("l") then
             if not waitForMouseUp then
 
+                turn = turn + 1
+
                 local ball= balls[turn]
                 ball:getBody():setActive(true)
                 ball:getBody():setX(x1)
                 ball:getBody():setY(y1)
                 local fact= 10
                 ball:getBody():setLinearVelocity((x2 - x1) * fact, (y2 - y1) * fact)
-                turn = turn + 1
 
                 print("click", x2 - x1, y2 - y1)
 
