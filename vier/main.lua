@@ -282,6 +282,8 @@ function updateBoard(dt)
                 str = ""
             end
         end
+        
+    
     end
     
                 
