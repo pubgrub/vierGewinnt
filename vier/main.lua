@@ -1,6 +1,6 @@
 
 TOWER_X = 400
-TOWER_Y = 200
+GROUND_Y = 15
 BASE_H = 20
 COL_H = 180
 COL_W = 10
@@ -24,26 +24,6 @@ player= 1
 screenWidth= 0
 screenHeight= 0
 
-function fixWorldXY( f)
-    b = f:getBody()
-    local x1, y1, x2, y2 = f:getBoundingBox()
-    local w = x2 - x1
-    local h = y2 - y1
-    local bX, bY = b:getPosition()
-    print( f)
-    print( "Body getY: ", b:getY())
-    print( "Body getPosition: ", b:getPosition())
-    b:setPosition( bX + w / 2, bY + h / 2)
-    print( "Body getY: ", b:getY())
-    print( "Body getPosition: ", b:getPosition())
-end
-
-function newFixture( b, s)
-    local f = love.physics.newFixture( b, s)
-    fixWorldXY( f)
-    return f
-end
-
 function initBall()
     ball.body = love.physics.newBody( world, 505, 100, "dynamic")
     ball.body:setMass( 50)
@@ -54,19 +34,22 @@ end
 
 function initTower()
     tower.base = {}
-    local body = love.physics.newBody( world, TOWER_X, TOWER_Y + COL_H)
-    local shape = love.physics.newRectangleShape(  TOWER_W, BASE_H)
-    tower.base.fixture = newFixture( body, shape)
+    local body = love.physics.newBody( world, ( screenWidth - TOWER_W) / 2, screenHeight - GROUND_Y - BASE_H)
+    local shape = love.physics.newPolygonShape(  0,       0,
+                                                 TOWER_W, 0,
+                                                 TOWER_W, BASE_H,
+                                                 0,       BASE_H)
+    tower.base.fixture = love.physics.newFixture( body, shape)
     tower.cols = {}
     for i = 0,7 do
       col = {}
-      local body = love.physics.newBody( world, TOWER_X +i * ( COL_W + SLOT_W), TOWER_Y)
+      local body = love.physics.newBody( world, ( screenWidth - TOWER_W) / 2 +i * ( COL_W + SLOT_W), screenHeight - GROUND_Y - BASE_H - COL_H)
       local shape = love.physics.newPolygonShape( 0, TOWERSPIKE_H,
                                                   0, COL_H,
                                                   COL_W, COL_H,
                                                   COL_W, TOWERSPIKE_H,
                                                   COL_W / 2, 0)
-      col.fixture = newFixture( body, shape)
+      col.fixture = love.physics.newFixture( body, shape)
       table.insert( tower.cols, col)
     end
 end
@@ -148,14 +131,13 @@ end
 function drawPolygon( mode, fixture)
     local s = fixture:getShape()
     local b = fixture:getBody()
-    print( "drawPolygon start")
-    print( "s:getPoints: ", s:getPoints())
-    print( "b:getPositions: ", b:getPosition())
-    print( "b:getWorldPoints(s:getPoints() ): ", b:getWorldPoints(s:getPoints() ))
-    print( "drawPolygon stop")
+--    print( "drawPolygon start")
+--    print( "s:getPoints: ", s:getPoints())
+--    print( "b:getPositions: ", b:getPosition())
+--    print( "b:getWorldPoints(s:getPoints() ): ", b:getWorldPoints(s:getPoints() ))
+--    print( "drawPolygon stop")
 
     love.graphics.polygon( mode, b:getWorldPoints(s:getPoints() ) )
-    for i = 1, 0 do end
 end
 
 function drawRectangle(mode, fixture)
@@ -173,7 +155,7 @@ end
 
 function drawTower()
     love.graphics.setColor( 220, 40, 60)
-    drawRectangle( "fill", tower.base.fixture)
+    drawPolygon( "fill", tower.base.fixture)
     for i, col in ipairs( tower.cols) do
         drawPolygon( "fill", col.fixture)
     end
