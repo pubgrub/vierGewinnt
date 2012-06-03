@@ -102,7 +102,7 @@ function initPlayers()
 end
 
 function initBalls()
-    local shape = love.physics.newCircleShape(BALL_W)
+    local shape = love.physics.newCircleShape(BALL_R)
     local i
     for i=1,42 do
         local x = (screenWidth - TOWER_W) / 2 + (SLOT_W + COL_W) / 2 + ((i - 1) % 7) * (COL_W + SLOT_W)
@@ -191,8 +191,8 @@ function updatePlayer(dt)
     if dist > 0 then
         local sin= math.sin(angle + PI2)
         local cos= math.cos(angle + PI2)
-        local x1, y1= bx + sin * BALL_W, by - cos * BALL_W
-        local x2, y2= bx + sin * (BALL_W + dist), by - cos * (BALL_W + dist)
+        local x1, y1= bx + sin * BALL_R, by - cos * BALL_R
+        local x2, y2= bx + sin * (BALL_R + dist), by - cos * (BALL_R + dist)
 
         aimLine= { x1= x1, y1= y1, x2= x2, y2= y2 }
 
@@ -220,6 +220,7 @@ end
 
 function updateBoard(dt)
 
+    if false then
 
     for i,p in ipairs(players) do
         for j,b in ipairs( p.balls) do
@@ -232,6 +233,9 @@ function updateBoard(dt)
             end
         end
     end
+
+    end
+
 end
 
 function love.update( dt)
@@ -288,12 +292,12 @@ function drawPlayers()
     for i,v in ipairs(players) do
         local body = v.fixture:getBody()
         local x, y = body:getPosition()
-        local angle = x * 2 / BALL_W
+        local angle = x * 2 / BALL_R
         local dist= v.dist
 
         body:setAngle(angle)
         local o= 36 -- Warum 36??
-        love.graphics.draw(v.image, x, y, angle, BALL_W / 36, BALL_W / 36, o, o)
+        love.graphics.draw(v.image, x, y, angle, BALL_R / 36, BALL_R / 36, o, o)
     end
 
     if aimLine ~= nil then
