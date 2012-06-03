@@ -20,6 +20,7 @@ players = {}
 balls= {}
 board = {}
 border = {}
+winner= 0
 
 waitForMouseUp = true
 
@@ -28,9 +29,38 @@ screenHeight= 0
 
 towerX= 0
 
+
+---------------------------------------------------------------------------------------------------
+--  Misc
+---------------------------------------------------------------------------------------------------
+
 function player()
     return (#balls % 2) + 1
 end
+
+ballShape= nil
+
+function addNewBall(x, y, vx, vy)
+    if ballShape == nil then
+        ballShape = love.physics.newCircleShape(BALL_R)
+    end
+    local body = love.physics.newBody(world, x, y, "dynamic")
+    -- body:setActive(false)
+    body:setLinearDamping(0.5)
+    local fact= 10
+    body:setLinearVelocity(vx * fact, vy * fact)
+    local fixture = love.physics.newFixture(body, ballShape)
+    fixture:setRestitution(0.4)
+    table.insert(balls, fixture)
+end
+
+function gameWon(player)
+    winner= player
+end
+
+---------------------------------------------------------------------------------------------------
+--  Init
+---------------------------------------------------------------------------------------------------
 
 function initBall()
     ball.body = love.physics.newBody( world, 490, 100, "dynamic")
@@ -105,40 +135,6 @@ function initPlayers()
     addPlayer(screenWidth - 100)
 end
 
-function initBalls()
-end
-
-function initBalls_OLD()
-    local shape = love.physics.newCircleShape(BALL_R)
-    local i
-    for i = 1, 42 do
-        local x = (screenWidth - TOWER_W) / 2 + (SLOT_W + COL_W) / 2 + ((i - 1) % 7) * (COL_W + SLOT_W)
-        local y = math.floor((i - 1) / 7) * COL_W
-        local body = love.physics.newBody(world, x, y, "dynamic")
-        body:setActive(i <= turn) -- fuers testen, normalerweise ist turn hier 0
-        body:setLinearDamping(0.5)
-        local fixture = love.physics.newFixture(body, shape)
-        fixture:setRestitution(0.4)
-        table.insert(balls, fixture)
-    end
-end
-
-ballShape= nil
-
-function addNewBall(x, y, vx, vy)
-    if ballShape == nil then
-        ballShape = love.physics.newCircleShape(BALL_R)
-    end
-    local body = love.physics.newBody(world, x, y, "dynamic")
-    -- body:setActive(false)
-    body:setLinearDamping(0.5)
-    local fact= 10
-    body:setLinearVelocity(vx * fact, vy * fact)
-    local fixture = love.physics.newFixture(body, ballShape)
-    fixture:setRestitution(0.4)
-    table.insert(balls, fixture)
-end
-
 function initBoard()
     board = {}
     board.positions = {}
@@ -178,9 +174,13 @@ function love.load()
     initTower()
     initBorders()
     initPlayers()
-    initBalls()
     initBoard()
 end
+
+
+---------------------------------------------------------------------------------------------------
+--  Update
+---------------------------------------------------------------------------------------------------
 
 function updateBalls(dt)
     for i, ball in ipairs(balls) do
@@ -250,7 +250,9 @@ function updateCurrentPlayer(dt)
 end
 
 function updatePlayers(dt)
-    updateCurrentPlayer(dt)
+    if winner == 0 then
+        updateCurrentPlayer(dt)
+    end
 
     for i, pl in ipairs(players) do
         local body= pl.fixture:getBody()
@@ -317,6 +319,10 @@ function love.update( dt)
     updatePlayers(dt)
     updateBoard(dt)
 end
+
+---------------------------------------------------------------------------------------------------
+--  Draw
+---------------------------------------------------------------------------------------------------
 
 function drawPolygon( mode, fixture)
     local shape = fixture:getShape()
@@ -388,6 +394,17 @@ function drawDebug()
 --    end
 end
 
+messageFont= nil
+
+function drawMessage()
+    if messageFont == nil then messageFont = love.graphics.newFont(40) end
+
+    if winner > 0 then
+        love.graphics.setFont(messageFont)
+        love.graphics.printf("Spieler " .. winner .. " gewinnt", 0, 30, screenWidth, "center")
+    end
+end
+
 function love.draw()
     drawBall()
     drawBalls()
@@ -395,4 +412,5 @@ function love.draw()
     drawBorder()
     drawPlayers()
     drawDebug()
+    drawMessage()
 end
