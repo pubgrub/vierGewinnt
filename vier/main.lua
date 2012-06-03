@@ -6,6 +6,9 @@ balls = {}
 -- Contains all the boxes. (Terrain)
 boxes = {}
 
+players = {}
+player= 1
+
 function love.load()
 
     -- love.graphics.setMode(1024, 768)
@@ -31,14 +34,14 @@ function love.load()
     }
 
     -- Create the world.
-    world = love.physics.newWorld(0, 50)
+    world = love.physics.newWorld(0, 400)
 
     -- Create ground body.
     local b = love.physics.newBody(world, screenWidth / 2, screenHeight - 5, "static")
     local s = love.physics.newRectangleShape(0, 0, screenWidth, 10)
     ground = love.physics.newFixture(b, s)
 
-    local s = love.physics.newCircleShape(30)
+    local s = love.physics.newCircleShape(32)
 
     local x = 100
     local y = 300
@@ -46,7 +49,8 @@ function love.load()
     local t = {}
     t.i = images.green
     t.f = love.physics.newFixture(b, s)
-    table.insert(balls, t)
+    t.f:setRestitution(0.4);
+    table.insert(players, t)
 
     -- Add all the balls.
     -- addball(balldefs[1], 50) -- Add 100 green.
@@ -60,10 +64,34 @@ function love.load()
 
 end
 
+pi= math.pi
+pi2= math.pi / 2
+pi4= math.pi / 4
+pi8= math.pi / 8
+pi16= math.pi / 16
+
+playerRadius= 40
+
 function love.update(dt)
 
     -- Update the world.
     world:update(dt)
+
+    local x, y = love.mouse.getPosition()
+    local b= players[player].f:getBody()
+    -- print(x, y, b:getX(), b:getY())
+    local bx= b:getX()
+    local by= b:getY()
+
+    local dist = (math.sqrt((x - bx) * (x - bx) + (y - by) * (y - by)) - playerRadius) / 2
+    if dist < 0 then dist= 0 end
+    if dist > 100 then dist= 100 end
+    players[player].dist= dist
+
+    local angle = math.atan2(y - by, x - bx)
+    if angle > -pi16 then angle= -pi16 end
+    if angle < -pi2 + pi16 then angle= -pi2 + pi16 end
+    players[player].angle= angle
 
     -- Check whether we need to reset some balls.
     -- When they move out of the screen, they
@@ -78,18 +106,55 @@ function love.update(dt)
 
 end
 
+function drawRectangle(mode, fixture)
+   local x1, y1, x2, y2 = fixture:getBoundingBox()
+   local w = x2 - x1
+   local h = y2 - y1
+   local b = fixture:getBody()
+   love.graphics.rectangle(mode, b:getX() - w / 2, b:getY() - h / 2, w, h)
+end
+
+-- function _xyOfs(x, y,
+
 function love.draw()
+
     -- Draw all the balls.
-    for i,v in ipairs(balls) do
-        local b= v.f:getBody()
-        love.graphics.draw(v.i, b:getX(), b:getY(), b:getAngle(), 1, 1, -15, -15)
+    for i,v in ipairs(players) do
+        local b = v.f:getBody()
+        local x, y = b:getPosition()
+        local angle = x * 2 / playerRadius
+        local dist= v.dist
+        local vx, vy = b:getLinearVelocity()
+        local vv = vx * vx + vy * vy
+
+        if vv < 20 and dist > 0 then
+            local sin= math.sin(v.angle + pi2)
+            local cos= math.cos(v.angle + pi2)
+            local x1, y1= x + sin * playerRadius, y - cos * playerRadius
+            local x2, y2= x + sin * (playerRadius + dist), y - cos * (playerRadius + dist)
+            love.graphics.line(x1, y1, x2, y2)
+
+            angle= angle + v.angle + pi2 - pi16
+
+            if love.mouse.isDown("l") then
+                print("click", x2 - x1, y2 - y1)
+                -- v.f:setRestitution(0.1)
+                b:setLinearDamping(0.5)
+                local fact= 10
+                b:setLinearVelocity((x2 - x1) * fact, (y2 - y1) * fact)
+            end
+        end
+
+        b:setAngle(angle)
+        love.graphics.draw(v.i, x, y, angle, 1, 1, 36, 36)
     end
     -- Draw all the boxes.
     -- for i,v in ipairs(boxes) do
     --     love.graphics.polygon("line", v.s:getPoints())
     -- end
 
-    love.graphics.polygon("line", ground:getShape():getPoints())
+    drawRectangle("fill", ground);
+    -- love.graphics.polygon("line", ground:getShape():getPoints())
 end
 
 -- Adds a static box.
