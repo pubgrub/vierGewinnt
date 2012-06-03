@@ -25,41 +25,40 @@ screenWidth= 0
 screenHeight= 0
 
 function fixWorldXY( f)
-   b = f:getBody()
-   local x1, y1, x2, y2 = f:getBoundingBox()
-   local w = x2 - x1
-   local h = y2 - y1
-   local bX, bY = b:getPosition()
-   print( f)
-   print( "Body getY: ", b:getY())
-   print( "Body getPosition: ", b:getPosition())
-   b:setPosition( bX + w / 2, bY + h / 2)
-   print( "Body getY: ", b:getY())
-   print( "Body getPosition: ", b:getPosition())
-
+    b = f:getBody()
+    local x1, y1, x2, y2 = f:getBoundingBox()
+    local w = x2 - x1
+    local h = y2 - y1
+    local bX, bY = b:getPosition()
+    print( f)
+    print( "Body getY: ", b:getY())
+    print( "Body getPosition: ", b:getPosition())
+    b:setPosition( bX + w / 2, bY + h / 2)
+    print( "Body getY: ", b:getY())
+    print( "Body getPosition: ", b:getPosition())
 end
 
 function newFixture( b, s)
-   local f = love.physics.newFixture( b, s)
-   fixWorldXY( f)
-   return f
+    local f = love.physics.newFixture( b, s)
+    fixWorldXY( f)
+    return f
 end
 
 function initBall()
-   ball.body = love.physics.newBody( world, 505, 100, "dynamic")
-   ball.body:setMass( 50)
-   ball.shape = love.physics.newCircleShape( 14)
-   ball.fixture = love.physics.newFixture(ball.body, ball.shape)
-   ball.fixture:setRestitution( 0.4)
+    ball.body = love.physics.newBody( world, 505, 100, "dynamic")
+    ball.body:setMass( 50)
+    ball.shape = love.physics.newCircleShape( 14)
+    ball.fixture = love.physics.newFixture(ball.body, ball.shape)
+    ball.fixture:setRestitution( 0.4)
 end
 
 function initTower()
-   tower.base = {}
-   local body = love.physics.newBody( world, TOWER_X, TOWER_Y + COL_H)
-   local shape = love.physics.newRectangleShape(  TOWER_W, BASE_H)
-   tower.base.fixture = newFixture( body, shape)
-   tower.cols = {}
-   for i = 0,7 do
+    tower.base = {}
+    local body = love.physics.newBody( world, TOWER_X, TOWER_Y + COL_H)
+    local shape = love.physics.newRectangleShape(  TOWER_W, BASE_H)
+    tower.base.fixture = newFixture( body, shape)
+    tower.cols = {}
+    for i = 0,7 do
       col = {}
       local body = love.physics.newBody( world, TOWER_X +i * ( COL_W + SLOT_W), TOWER_Y)
       local shape = love.physics.newPolygonShape( 0, TOWERSPIKE_H,
@@ -69,7 +68,7 @@ function initTower()
                                                   COL_W / 2, 0)
       col.fixture = newFixture( body, shape)
       table.insert( tower.cols, col)
-   end
+    end
 end
 
 function initGround()
@@ -109,18 +108,18 @@ function initPlayers()
 end
 
 function love.load()
-   love.graphics.setBackgroundColor( 200,150,100)
+    love.graphics.setBackgroundColor( 200,150,100)
 
     screenWidth= love.graphics.getWidth();
     screenHeight= love.graphics.getHeight();
 
-   love.physics.setMeter(64)
-   world = love.physics.newWorld(0, 9.81 * love.physics.getMeter(), true)
+    love.physics.setMeter(64)
+    world = love.physics.newWorld(0, 9.81 * love.physics.getMeter(), true)
 
-   initBall()
-   initTower()
-   initGround()
-   initPlayers()
+    initBall()
+    initTower()
+    initGround()
+    initPlayers()
 end
 
 function updatePlayer(dt)
@@ -142,8 +141,8 @@ function updatePlayer(dt)
 end
 
 function love.update( dt)
-   world:update( dt)
-   updatePlayer(dt)
+    world:update( dt)
+    updatePlayer(dt)
 end
 
 function drawPolygon( mode, fixture)
@@ -151,10 +150,12 @@ function drawPolygon( mode, fixture)
     local b = fixture:getBody()
     print( "drawPolygon start")
     print( "s:getPoints: ", s:getPoints())
+    print( "b:getPositions: ", b:getPosition())
     print( "b:getWorldPoints(s:getPoints() ): ", b:getWorldPoints(s:getPoints() ))
     print( "drawPolygon stop")
 
     love.graphics.polygon( mode, b:getWorldPoints(s:getPoints() ) )
+    for i = 1, 0 do end
 end
 
 function drawRectangle(mode, fixture)
@@ -171,11 +172,11 @@ function drawBall()
 end
 
 function drawTower()
-   love.graphics.setColor( 220, 40, 60)
-   drawRectangle( "fill", tower.base.fixture)
-   for i, col in ipairs( tower.cols) do
-      drawPolygon( "fill", col.fixture)
-   end
+    love.graphics.setColor( 220, 40, 60)
+    drawRectangle( "fill", tower.base.fixture)
+    for i, col in ipairs( tower.cols) do
+        drawPolygon( "fill", col.fixture)
+    end
 end
 
 function drawPlayer()
@@ -221,11 +222,3 @@ function love.draw()
     drawGround()
     drawPlayer()
 end
-
-
-
-
-
-
-
-
