@@ -123,6 +123,7 @@ end
 function initBoard()
     board = {}
     board.positions = {}
+    board.value = ""
     local boardBase = tower.base.fixture:getBody():getY()
     local x,y
     boardBalls = {}
@@ -131,6 +132,7 @@ function initBoard()
             local p = {}
             p.y = boardBase - BALL_R * 2 * ( y + 0.5)
             p.x = towerX + COL_W + (COL_W + SLOT_W) * x + SLOT_W * 0.5
+            p.player = 0
             table.insert( board.positions, p)
 --            print( p.x, p.y)
 --            b = {}
@@ -237,22 +239,43 @@ function updatePlayer(dt)
 end
 
 function updateBoard(dt)
-
-    if false then
-
-    for i,p in ipairs(players) do
-        for j,b in ipairs( p.balls) do
-            local velX, velY = b.body:getLinearVelocity()
-            if( velX == 0 and velY == 0) then
-                local x,y = b.body:getPosition()
-                if( x > towerX and x < towerX + TOWER_W and y > TOWER_Y and y < TOWER_Y + COH_H) then
-
+    local changed = false
+    for j,p in ipairs( board.positions) do
+        x = p.x
+        y = p.y
+        if( p.player == 0) then
+            for i=1,turn do
+                local ball= balls[i]
+                vx, vy = ball:getBody():getLinearVelocity()
+                if vx == 0 and vy == 0 then
+                    bx = ball:getBody():getX()
+                    by = ball:getBody():getY()
+                    if math.abs( x - bx) < 3 and math.abs( y - by) < 3 then
+                        p.player =  (i % 2) + 1
+                        changed = true
+                        break
+                    end
                 end
             end
         end
     end
+    if changed == true then
+        str = ""
+        for j,p in ipairs( board.positions) do
+            if( p.player ~= 0) then
+                str = str .. tostring( p.player) .. " "
+            else
+                str = str .. "_ "
+            end
+            if( j % 7 == 0) then
+                print( str)
+                str = ""
+            end
+        end
+
 
     end
+
 
 end
 
