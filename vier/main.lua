@@ -20,17 +20,18 @@ PLAYER_RADIUS= BALL_W
 ball= {}
 tower= {}
 players = {}
+board = {}
 player= 1
 
 screenWidth= 0
 screenHeight= 0
 
 function initBall()
-    ball.body = love.physics.newBody( world, 505, 100, "dynamic")
+    ball.body = love.physics.newBody( world, 490, 100, "dynamic")
     ball.body:setMass( 50)
     ball.shape = love.physics.newCircleShape( BALL_W)
     ball.fixture = love.physics.newFixture(ball.body, ball.shape)
-    ball.fixture:setRestitution( 0.4)
+    ball.fixture:setRestitution( 0.05)
 end
 
 function initTower()
@@ -87,6 +88,7 @@ function initPlayers()
         t.image = images.green
         t.fixture = love.physics.newFixture(body, shape)
         t.fixture:setRestitution(0.4);
+        t.balls = {}
         table.insert(players, t)
     end
 
@@ -127,21 +129,30 @@ function updatePlayer(dt)
     players[player].angle= angle
 end
 
+function updateBoard(dt)
+    board = {}
+    for i,p in ipairs(players) do
+        for j,b in ipairs( p.balls) do
+            local velX, velY = b.body:getLinearVelocity()
+            if( velX == 0 and velY == 0) then
+                local x,y = b.body:getPosition()
+                if( x > TOWER_X and x < TOWER_X + TOWER_W and y > TOWER_Y and y < TOWER_Y + COH_H) then
+                    
+                end
+            end
+        end
+    end
+end
+
 function love.update( dt)
     world:update( dt)
     updatePlayer(dt)
+    updateBoard(dt)
 end
 
 function drawPolygon( mode, fixture)
     local shape = fixture:getShape()
     local body = fixture:getBody()
-
---    print( "drawPolygon start")
---    print( "s:getPoints: ", s:getPoints())
---    print( "b:getPositions: ", b:getPosition())
---    print( "b:getWorldPoints(s:getPoints() ): ", b:getWorldPoints(s:getPoints() ))
---    print( "drawPolygon stop")
-
     love.graphics.polygon( mode, body:getWorldPoints(shape:getPoints() ) )
 end
 
