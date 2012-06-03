@@ -69,10 +69,12 @@ function drawPolygon( mode, fixture)
    local b = fixture:getBody()
    print( "drawPolygon start")
    print( "s:getPoints: ", s:getPoints())
+   print( "b:getPositions: ", b:getPosition())
    print( "b:getWorldPoints(s:getPoints() ): ", b:getWorldPoints(s:getPoints() ))
    print( "drawPolygon stop")
 
    love.graphics.polygon( mode, b:getWorldPoints(s:getPoints() ) )
+   for i = 1, 0 do end
 end
 
 function drawRectangle( mode, fixture)
