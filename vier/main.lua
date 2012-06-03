@@ -21,6 +21,7 @@ players = {}
 balls= {}
 turn= 0
 board = {}
+border = {}
 
 waitForMouseUp = true
 
@@ -62,10 +63,18 @@ function initTower()
     end
 end
 
-function initGround()
-    local body = love.physics.newBody(world, screenWidth / 2, screenHeight - 5, "static")
-    local shape = love.physics.newRectangleShape(0, 0, screenWidth, 10)
-    ground = love.physics.newFixture(body, shape)
+function initBorders()
+    local body
+    local shapeH = love.physics.newRectangleShape(0, 0, screenWidth, 10)
+    local shapeV = love.physics.newRectangleShape(0, 0, 10, screenHeight + 50)
+    body = love.physics.newBody(world, screenWidth / 2, screenHeight - 5, "static")
+    border.ground = love.physics.newFixture(body, shapeH)
+    body = love.physics.newBody(world, screenWidth / 2, -50, "static")
+    border.top    = love.physics.newFixture(body, shapeH)
+    body = love.physics.newBody(world, -5, screenHeight / 2 - 25, "static")
+    border.left   = love.physics.newFixture(body, shapeV)
+    body = love.physics.newBody(world, screenWidth + 5, screenHeight / 2 - 25, "static")
+    border.right  = love.physics.newFixture(body, shapeV)
 end
 
 function initPlayers()
@@ -151,7 +160,7 @@ function love.load()
 
     initBall()
     initTower()
-    initGround()
+    initBorders()
     initPlayers()
     initBalls()
     initBoard()
@@ -284,9 +293,9 @@ function drawBalls()
     end
 end
 
-function drawGround()
+function drawBorder()
     love.graphics.setColor( 220, 40, 60)
-    drawRectangle("fill", ground);
+    drawRectangle("fill", border.ground);
 end
 
 function drawPlayers()
@@ -358,7 +367,7 @@ function love.draw()
     drawBall()
     drawBalls()
     drawTower()
-    drawGround()
+    drawBorder()
     drawPlayers()
     drawDebug()
 end
