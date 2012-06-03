@@ -136,27 +136,26 @@ function initPlayers()
 end
 
 function initBoard()
+    local solutionMatrix = { 7, 7, 7, 15, 10, 10, 10,
+                             7, 7, 7, 15, 10, 10, 10,
+                             7, 7, 7, 15, 10, 10, 10,
+                             1, 1, 1,  1,  0,  0,  0,
+                             1, 1, 1,  1,  0,  0,  0,
+                             1, 1, 1,  1,  0,  0,  0 }
     board = {}
     board.positions = {}
     board.value = ""
     local boardBase = tower.base.fixture:getBody():getY()
     local x,y
     boardBalls = {}
-    for y = 0, 5 do
+    for y = 5, 0, -1 do
         for x = 0,6 do
             local p = {}
             p.y = boardBase - BALL_R * 2 * ( y + 0.5)
             p.x = towerX + COL_W + (COL_W + SLOT_W) * x + SLOT_W * 0.5
             p.player = 0
+            p.matrix = solutionMatrix[ (5 - y) * 7 + x + 1]
             table.insert( board.positions, p)
---            print( p.x, p.y)
---            b = {}
---            b.body = love.physics.newBody( world, p.x, p.y, "dynamic")
---            b.body:setMass( 50)
---            b.shape = love.physics.newCircleShape( BALL_R)
---            b.fixture = love.physics.newFixture(b.body, b.shape)
---            b.fixture:setRestitution( 0.05)
---            table.insert( boardBalls, b)
         end
     end
 end
@@ -274,6 +273,18 @@ end
 
 function updateBoard(dt)
     local changed = false
+    
+    function checkRow( p, offset)
+        print( "checkRow, p, offset: ", p, offset)
+        local playerSum = 0
+        local player = board.positions[ p].player
+        for i = offset,offset*4,offset do
+            local playerSum = playerSum + board.positions[p + offset].player
+            if( playerSum == player * 4) then return player end
+        end
+        return 0
+    end
+
     for j,p in ipairs( board.positions) do
         x = p.x
         y = p.y
@@ -293,7 +304,7 @@ function updateBoard(dt)
             end
         end
     end
-    if changed == true then
+    if changed then
         str = ""
         for j,p in ipairs( board.positions) do
             if( p.player ~= 0) then
@@ -307,10 +318,29 @@ function updateBoard(dt)
             end
         end
 
-
+        for j,p in ipairs( board.positions) do
+            if( p.player > 0) then
+                local matrix = p.matrix
+                print( "matrix: ", matrix)
+                if( matrix > 7) then
+                    matrix = matrix - 8
+                    winner = checkRow( j, 6)
+                end                
+                if( matrix > 3) then
+                    matrix = matrix - 4
+                    winner = checkRow( j, 8)
+                end                
+                if( matrix > 1) then
+                    matrix = matrix - 2
+                    winner = checkRow( j, 7)
+                end                
+                if( matrix > 0) then
+                    winner = checkRow( j, 1)
+                end                
+            end             
+        end
+        if( winner > 0) then gameWon( winner) end
     end
-
-
 end
 
 function love.update( dt)
